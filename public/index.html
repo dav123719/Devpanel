@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kimi Chat - DevPanel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" onclick="chatApp.newChat()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    New Chat
+                </button>
+            </div>
+            <div class="conversations-list" id="conversationsList">
+                <!-- Conversations will be loaded here -->
+            </div>
+            <div class="sidebar-footer">
+                <button class="settings-btn" onclick="chatApp.toggleSettings()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.8 17.8l-4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24-4.24l-4.24 4.24M6.34 6.34l-4.24-4.24"></path>
+                    </svg>
+                    Settings
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="chat-header">
+                <button class="menu-toggle" onclick="chatApp.toggleSidebar()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="model-selector">
+                    <select id="modelSelect">
+                        <option value="kimi-k2-turbo-preview">Kimi K2 Turbo</option>
+                        <option value="kimi-k2-turbo">Kimi K2 Turbo (Stable)</option>
+                    </select>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="chatApp.clearChat()" title="Clear chat">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- API Key Modal -->
+            <div class="modal" id="apiKeyModal">
+                <div class="modal-content">
+                    <h2>Enter Moonshot API Key</h2>
+                    <p>Your API key is stored locally in your browser session.</p>
+                    <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
+                    <div class="modal-actions">
+                        <a href="https://platform.moonshot.cn/console/api-keys" target="_blank" class="link">Get API Key →</a>
+                        <button onclick="chatApp.saveApiKey()">Save Key</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Modal -->
+            <div class="modal" id="settingsModal">
+                <div class="modal-content">
+                    <h2>Settings</h2>
+                    <div class="setting-item">
+                        <label>Temperature</label>
+                        <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.6">
+                        <span id="temperatureValue">0.6</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>System Prompt</label>
+                        <textarea id="systemPrompt" rows="4" placeholder="Enter a custom system prompt...">You are Kimi, an AI assistant made by Moonshot AI. You are helpful, harmless, and honest.</textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button onclick="chatApp.saveSettings()">Save Settings</button>
+                        <button class="secondary" onclick="chatApp.toggleSettings()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-content">
+                        <h1>Kimi Chat</h1>
+                        <p class="subtitle">Powered by Moonshot AI</p>
+                        <div class="example-prompts">
+                            <button class="example-prompt" onclick="chatApp.useExample('Explain quantum computing in simple terms')">
+                                "Explain quantum computing in simple terms"
+                            </button>
+                            <button class="example-prompt" onclick="chatApp.useExample('Write a Python function to calculate fibonacci numbers')">
+                                "Write a Python function to calculate fibonacci numbers"
+                            </button>
+                            <button class="example-prompt" onclick="chatApp.useExample('Help me debug this error: TypeError: cannot concatenate str and int')">
+                                "Help me debug this TypeError..."
+                            </button>
+                            <button class="example-prompt" onclick="chatApp.useExample('Create a business plan for a sustainable coffee shop')">
+                                "Create a business plan for a sustainable coffee shop"
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Message Kimi..." 
+                        rows="1"
+                        onkeydown="chatApp.handleKeyDown(event)"
+                        oninput="chatApp.autoResize(this)"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="chatApp.sendMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <p class="input-footer">Kimi can make mistakes. Consider checking important information.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
